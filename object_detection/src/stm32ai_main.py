@@ -11,6 +11,7 @@ import sys
 from hydra.core.hydra_config import HydraConfig
 import hydra
 import warnings
+from clearml import Task
 
 warnings.filterwarnings("ignore")
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -170,6 +171,9 @@ def process_mode(cfg: DictConfig = None,
         mlflow.log_param("model_path", cfg.general.model_path)
         mlflow.log_param("stm32ai_version", cfg.tools.stm32ai.version)
         mlflow.log_param("target", cfg.benchmarking.board)
+        # ClearML - Example how to get task's context anywhere in the file.
+        task = Task.current_task()
+        task.connect(cfg)
 
     # logging the completion of the chain
     log_to_file(cfg.output_dir, f'operation finished: {mode}')
@@ -205,6 +209,14 @@ def main(cfg: DictConfig) -> None:
     cfg = get_config(cfg)
     cfg.output_dir = HydraConfig.get().run.dir
     mlflow_ini(cfg)
+    #ClearML - Initializing ClearML's Task object.
+
+    task = Task.init(project_name='stm_modelzoo_project',task_name='stm_modelzoo_task')
+    # ClearML - optional yaml logging 
+    task.connect_configuration(
+    name='training_conf', configuration=cfg
+    )
+    
 
     # Seed global seed for random generators
     seed = get_random_seed(cfg)
